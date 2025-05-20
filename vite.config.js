@@ -14,7 +14,7 @@ export default defineConfig({
         theme_color: '#4ade80',
         background_color: '#ffffff',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/TODO/', // 👈 Must match repo name
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -25,9 +25,10 @@ export default defineConfig({
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-          }
+          },
         ],
       },
     }),
   ],
+  base: '/TODO/', // 👈 Must match GitHub repo name
 });

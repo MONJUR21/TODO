@@ -1,70 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import SemesterFolder from "./components/SemesterFolder";
+import AddSemesterModal from "./components/AddSemesterModal";
+import { FiPlus } from "react-icons/fi";
+import "./App.css";
+import { registerSW } from "virtual:pwa-register";
+import { initDB, getSemesters, saveSemester, deleteSemester } from './db';
+
+// PWA registration
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm("New version available. Refresh to update?")) {
+      window.location.reload();
+    }
+  },
+  onOfflineReady() {
+    console.log("App is ready for offline use");
+  },
+});
 
 function App() {
-  const [task, setTask] = useState('');
-  const [todos, setTodos] = useState(() => {
-    const savedTodos = localStorage.getItem('todos');
-    return savedTodos ? JSON.parse(savedTodos) : [];
-  });
+  const [semesters, setSemesters] = useState([]);
+  const [showAddSemesterModal, setShowAddSemesterModal] = useState(false);
+  const [dbInitialized, setDbInitialized] = useState(false);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark';
-  });
-
+  // Initialize IndexedDB on first render
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
-  }, [todos]);
-
-  useEffect(() => {
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    document.body.className = darkMode ? 'dark' : '';
-  }, [darkMode]);
-
-  const addTodo = () => {
-    if (task.trim()) {
-      setTodos([...todos, { text: task, completed: false }]);
-      setTask('');
+    async function initializeDB() {
+      await initDB();
+      setDbInitialized(true);
     }
+    initializeDB();
+  }, []);
+
+  // Load data from IndexedDB when DB is initialized
+  useEffect(() => {
+    if (!dbInitialized) return;
+
+    async function loadSemesters() {
+      const savedSemesters = await getSemesters();
+      setSemesters(savedSemesters);
+    }
+    loadSemesters();
+  }, [dbInitialized]);
+
+  const addSemester = async (semesterName) => {
+    const newSemester = {
+      id: Date.now(),
+      name: semesterName,
+      courses: [],
+    };
+    await saveSemester(newSemester);
+    setSemesters([...semesters, newSemester]);
   };
 
-  const toggleComplete = (index) => {
-    const newTodos = [...todos];
-    newTodos[index].completed = !newTodos[index].completed;
-    setTodos(newTodos);
+  const updateSemester = async (updatedSemester) => {
+    await saveSemester(updatedSemester);
+    setSemesters(
+      semesters.map((sem) =>
+        sem.id === updatedSemester.id ? updatedSemester : sem
+      )
+    );
   };
 
-  const deleteTodo = (index) => {
-    const newTodos = [...todos];
-    newTodos.splice(index, 1);
-    setTodos(newTodos);
+  const deleteSemester = async (semesterId) => {
+    await deleteSemester(semesterId);
+    setSemesters(semesters.filter((sem) => sem.id !== semesterId));
   };
 
   return (
     <div className="app">
-      <h1>To-Do List</h1>
-      <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle">
-        {darkMode ? '☀️ Light Mode' : '🌙 Dark Mode'}
-      </button>
+      <header className="app-header">
+        <h1>Semester Notes Organizer</h1>
+        <p>Keep your course materials organized by semester</p>
+      </header>
 
-      <div className="input-section">
-        <input
-          type="text"
-          placeholder="Enter task"
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
+      <main className="app-main">
+        <div className="semesters-container">
+          {semesters.map((semester) => (
+            <SemesterFolder
+              key={semester.id}
+              semester={semester}
+              onUpdate={updateSemester}
+              onDelete={deleteSemester}
+            />
+          ))}
+
+          <button
+            className="add-semester-btn"
+            onClick={() => setShowAddSemesterModal(true)}
+          >
+            <FiPlus /> Add Semester
+          </button>
+        </div>
+      </main>
+
+      {showAddSemesterModal && (
+        <AddSemesterModal
+          onClose={() => setShowAddSemesterModal(false)}
+          onSave={addSemester}
         />
-        <button onClick={addTodo}>Add</button>
-      </div>
-
-      <ul>
-        {todos.map((todo, index) => (
-          <li key={index} className={todo.completed ? 'completed' : ''}>
-            <span onClick={() => toggleComplete(index)}>{todo.text}</span>
-            <button onClick={() => deleteTodo(index)}>❌</button>
-          </li>
-        ))}
-      </ul>
+      )}
     </div>
   );
 }
