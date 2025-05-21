@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import BaseModal from './BaseModal';
 
 function UploadFileModal({ onClose, onSave }) {
   const [fileName, setFileName] = useState('');
@@ -37,39 +38,46 @@ function UploadFileModal({ onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <h3>Upload File</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="file-upload">Choose File</label>
-            <input
-              id="file-upload"
-              type="file"
-              onChange={handleFileChange}
-              required
-            />
+    <BaseModal
+      title="Upload File"
+      onClose={onClose}
+      footerContent={
+        <>
+          <button 
+            type="button" 
+            className="btn secondary"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="btn primary"
+            form="upload-file-form"
+            disabled={!fileName || !fileContent}
+          >
+            Upload
+          </button>
+        </>
+      }
+    >
+      <form id="upload-file-form" onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="file-upload">Choose File</label>
+          <input
+            id="file-upload"
+            type="file"
+            onChange={handleFileChange}
+            required
+          />
+        </div>
+        {fileName && (
+          <div className="file-preview">
+            <p>Selected file: {fileName}</p>
           </div>
-          {fileName && (
-            <div className="file-preview">
-              <p>Selected file: {fileName}</p>
-            </div>
-          )}
-          <div className="modal-actions">
-            <button type="button" className="btn secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              className="btn primary"
-              disabled={!fileName || !fileContent}
-            >
-              Upload
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        )}
+      </form>
+    </BaseModal>
   );
 }
 

@@ -1,20 +1,37 @@
 import React from 'react';
+import BaseModal from './BaseModal';
 
-function ConfirmationModal({ message, onConfirm, onCancel }) {
+function ConfirmationModal({ 
+  title = "Confirm Action",
+  message,
+  confirmText = "Confirm",
+  onConfirm,
+  onCancel,
+  danger = false
+}) {
   return (
-    <div className="modal-overlay">
-      <div className="modal confirmation-modal">
-        <p>{message}</p>
-        <div className="modal-actions">
-          <button className="btn secondary" onClick={onCancel}>
+    <BaseModal
+      title={title}
+      onClose={onCancel}
+      footerContent={
+        <>
+          <button 
+            className="btn secondary"
+            onClick={onCancel}
+          >
             Cancel
           </button>
-          <button className="btn danger" onClick={onConfirm}>
-            Delete
+          <button 
+            className={`btn ${danger ? 'danger' : 'primary'}`}
+            onClick={onConfirm}
+          >
+            {confirmText}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <p>{message}</p>
+    </BaseModal>
   );
 }
 

@@ -1,56 +1,95 @@
-import React, { useState } from 'react';
-import { FiFile, FiImage, FiFileText, FiDownload, FiTrash2 } from 'react-icons/fi';
-import { FaFilePdf, FaFilePowerpoint, FaFileExcel, FaFileWord } from 'react-icons/fa';
-import ConfirmationModal from './ConfirmationModal';
+import React, { useState } from "react";
+import {
+  FiFile,
+  FiImage,
+  FiFileText,
+  FiDownload,
+  FiTrash2,
+} from "react-icons/fi";
+import {
+  FaFilePdf,
+  FaFilePowerpoint,
+  FaFileExcel,
+  FaFileWord,
+} from "react-icons/fa";
+import ConfirmationModal from "./ConfirmationModal";
 
 function FileItem({ file, onDelete }) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Determine if a file is an Office document
+  const isOfficeFile = () => {
+    return [
+      'application/vnd.openxmlformats-officedocument.',
+      'application/msword',
+      'application/vnd.ms-excel',
+      'application/vnd.ms-powerpoint'
+    ].some(type => file.type.includes(type));
+  };
+
   const getFileIcon = () => {
-    if (file.type.includes('image')) return <FiImage />;
-    if (file.type.includes('pdf')) return <FaFilePdf />;
-    if (file.type.includes('presentation') || file.type.includes('powerpoint')) return <FaFilePowerpoint />;
-    if (file.type.includes('spreadsheet') || file.type.includes('excel')) return <FaFileExcel />;
-    if (file.type.includes('word')) return <FaFileWord />;
-    if (file.type.includes('text')) return <FiFileText />;
+    if (file.type.includes("image")) return <FiImage />;
+    if (file.type.includes("pdf")) return <FaFilePdf />;
+    if (file.type.includes("presentation") || file.type.includes("powerpoint"))
+      return <FaFilePowerpoint />;
+    if (file.type.includes("spreadsheet") || file.type.includes("excel"))
+      return <FaFileExcel />;
+    if (file.type.includes("word")) return <FaFileWord />;
+    if (file.type.includes("text")) return <FiFileText />;
     return <FiFile />;
   };
 
   const handlePreview = () => {
-    try {
-      if (file.type.includes('pdf')) {
-        const byteString = atob(file.content.split(',')[1]);
-        const byteArray = new Uint8Array(byteString.length);
-        for (let i = 0; i < byteString.length; i++) {
-          byteArray[i] = byteString.charCodeAt(i);
-        }
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
+    if (isOfficeFile()) {
+      // For Office files, use Microsoft Online Viewer (requires public URL)
+      const blobUrl = URL.createObjectURL(dataURLtoBlob(file.content));
+      const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(blobUrl)}`;
+      
+      const newWindow = window.open(viewerUrl, "_blank");
+      if (!newWindow) {
+        alert("Pop-up blocked! Please allow pop-ups for this site.");
+      }
+      
+      // Clean up after 10 minutes
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 600000);
+    } else {
+      // Existing handling for other file types
+      try {
+        const blob = dataURLtoBlob(file.content);
         const blobUrl = URL.createObjectURL(blob);
+        const newWindow = window.open(blobUrl, "_blank");
         
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-          window.location.assign(blobUrl);
-        } else {
-          const newWindow = window.open(blobUrl, '_blank');
-          if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-            window.location.href = blobUrl;
+        if (!newWindow) {
+          // Mobile fallback
+          if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            window.location.assign(blobUrl);
+          } else {
+            handleDownload();
           }
         }
         setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
-      } else if (file.type.includes('image')) {
-        window.open(file.content, '_blank');
-      } else {
-        const blob = new Blob([file.content], { type: file.type });
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+      } catch (error) {
+        console.error("Error opening file:", error);
+        alert("Could not open the file. Please try downloading it instead.");
       }
-    } catch (error) {
-      console.error('Error opening file:', error);
-      alert('Could not open the file. Please try downloading it instead.');
     }
   };
 
+  // Convert data URL to Blob
+  const dataURLtoBlob = (dataURL) => {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  };
+
   const handleDownload = () => {
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.href = file.content;
     link.download = file.name;
     document.body.appendChild(link);
@@ -67,14 +106,14 @@ function FileItem({ file, onDelete }) {
         {file.name}
       </span>
       <div className="file-actions always-visible">
-        <button 
+        <button
           className="icon-btn download-btn"
           onClick={handleDownload}
           aria-label="Download file"
         >
           <FiDownload />
         </button>
-        <button 
+        <button
           className="icon-btn delete-btn"
           onClick={() => setShowDeleteModal(true)}
           aria-label="Delete file"

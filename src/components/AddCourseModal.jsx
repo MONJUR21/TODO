@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
+import ReactDOM from 'react-dom';
+import PropTypes from 'prop-types';
 
 function AddCourseModal({ onClose, onSave }) {
-  const [courseName, setCourseName] = useState('');
+  const [courseName, setCourseName] = React.useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -11,35 +13,37 @@ function AddCourseModal({ onClose, onSave }) {
     }
   };
 
-  return (
+  const modalElement = (
     <div className="modal-overlay">
-      <div className="modal">
-        <h3>Add New Course</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="course-name">Course Name</label>
-            <input
-              id="course-name"
-              type="text"
-              value={courseName}
-              onChange={(e) => setCourseName(e.target.value)}
-              placeholder="e.g., Data Structures"
-              required
-              autoFocus
-            />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="btn primary">
-              Add Course
-            </button>
-          </div>
+      <div className="modal-content">
+        <div className="modal-header">
+          <h3>Add New Course</h3>
+          <button onClick={onClose} className="close-btn">&times;</button>
+        </div>
+        <form onSubmit={handleSubmit} className="modal-body">
+          <input
+            type="text"
+            value={courseName}
+            onChange={(e) => setCourseName(e.target.value)}
+            placeholder="Enter course name"
+            autoFocus
+            required
+          />
         </form>
+        <div className="modal-footer">
+          <button type="button" onClick={onClose}>Cancel</button>
+          <button type="submit" onClick={handleSubmit}>Add Course</button>
+        </div>
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalElement, document.getElementById('modal-root'));
 }
+
+AddCourseModal.propTypes = {
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired
+};
 
 export default AddCourseModal;
