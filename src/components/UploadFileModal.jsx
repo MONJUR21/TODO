@@ -14,11 +14,9 @@ function UploadFileModal({ onClose, onSave }) {
     setFileType(file.type);
 
     const reader = new FileReader();
-    if (file.type.includes('image') || file.type.includes('pdf')) {
-      reader.readAsDataURL(file);
-    } else {
-      reader.readAsText(file);
-    }
+
+    // Always read as DataURL for consistent handling (images, pdfs, docs, etc.)
+    reader.readAsDataURL(file);
 
     reader.onload = () => {
       setFileContent(reader.result);
@@ -31,7 +29,7 @@ function UploadFileModal({ onClose, onSave }) {
       onSave({
         name: fileName,
         type: fileType,
-        content: fileContent
+        content: fileContent,
       });
       onClose();
     }
